@@ -41,7 +41,7 @@ class QuizOverlayController private constructor(private val ctx: Context) {
     var onCancel: (() -> Unit)? = null
 
     private var correctCount = 0
-    private lateinit var needCount: Int
+    private lateinit var needCount: 0
     private lateinit var activeSubjects: Set<String>
 
     // UI引用
