@@ -40,9 +40,10 @@ class QuizOverlayController private constructor(private val ctx: Context) {
     var onComplete: (() -> Unit)? = null
     var onCancel: (() -> Unit)? = null
 
-    private var correctCount = 0
-    private lateinit var needCount: 0
-    private lateinit var activeSubjects: Set<String>
+    private var correctCount: Int = 0
+    private var needCount: Int = 0
+    private var activeSubjects: Set<String> = emptySet()
+
 
     // UI引用
     private lateinit var tvProgress: TextView
