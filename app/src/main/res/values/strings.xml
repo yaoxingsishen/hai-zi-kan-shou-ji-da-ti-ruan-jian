@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">定时答题锁</string>
+    <string name="a11y_service_label">定时答题锁无障碍服务</string>
+</resources>

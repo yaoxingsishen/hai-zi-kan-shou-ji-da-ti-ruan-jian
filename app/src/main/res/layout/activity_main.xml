@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F6">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📚 定时答题锁"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#1F2937"
+            android:paddingBottom="4dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="打开管控APP必须答对题才能用"
+            android:textSize="13sp"
+            android:textColor="#6B7280"
+            android:paddingBottom="16dp"/>
+
+        <!-- 权限设置卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔐 权限设置"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="12dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="悬浮窗权限"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/tvOverlayStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="❌ 未开启"
+                    android:textSize="13sp"
+                    android:paddingEnd="12dp"/>
+
+                <Button
+                    android:id="@+id/btnOverlayPerm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="去开启"
+                    android:textSize="12sp"
+                    android:minWidth="60dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="无障碍服务"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/tvA11yStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="❌ 未开启"
+                    android:textSize="13sp"
+                    android:paddingEnd="12dp"/>
+
+                <Button
+                    android:id="@+id/btnA11yPerm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="去开启"
+                    android:textSize="12sp"
+                    android:minWidth="60dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 答题设置卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚙️ 答题设置"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="12dp"/>
+
+            <TextView
+                android:id="@+id/tvPin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="当前密码：1234"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnSetPin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="修改密码"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="需答对：3 道题"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnSetCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置答题数量"
+                android:textSize="13sp"/>
+        </LinearLayout>
+
+        <!-- 管控应用卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:elevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="12dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="📱 管控应用"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btnAddApp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="+ 添加"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvMonitoredCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="已管控 0 个应用"
+                android:textSize="13sp"
+                android:textColor="#6B7280"
+                android:paddingBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerApps"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="\n使用说明：开启两项权限后，添加要管控的APP。打开被管控APP时会弹出答题界面，答对设定数量的题才能继续使用。\n\n内置题库：数学、物理、化学、英语、地理、历史、政治、中华五千年"
+            android:textSize="12sp"
+            android:textColor="#6B7280"
+            android:padding="8dp"/>
+
+    </LinearLayout>
+</ScrollView>
