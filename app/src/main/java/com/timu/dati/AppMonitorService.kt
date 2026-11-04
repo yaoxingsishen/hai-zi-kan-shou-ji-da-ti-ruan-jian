@@ -20,6 +20,10 @@ class AppMonitorService : AccessibilityService() {
         private set
     var currentPkg: String? = null
         private set
+    // 调试用：最近无障碍事件的包名
+    @Volatile
+    var lastEventPkg: String? = null
+        private set
     private val handler = Handler(Looper.getMainLooper())
 
     // 使用时长计时（秒）
@@ -52,8 +56,9 @@ class AppMonitorService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
-        if (locked) return
         val pkg = event.packageName?.toString() ?: return
+        lastEventPkg = pkg  // 记录最近事件的包名，调试用
+        if (locked) return
         if (pkg == packageName || ignorePkgs.contains(pkg)) return
 
         // 不管是不是管控APP，都更新currentPkg，作为兜底

@@ -23,7 +23,8 @@ class MainActivity : AppCompatActivity() {
     private val debugRunnable = object : Runnable {
         override fun run() {
             val fg = AppMonitorService.getCurrentForeground()
-            binding.tvDebugFg.text = "当前前台：${fg ?: "未检测到"}"
+            val lastEvent = AppMonitorService.instance?.lastEventPkg ?: "无"
+            binding.tvDebugFg.text = "当前前台：${fg ?: "未检测到"} | 最近事件：$lastEvent"
             // 显示内部状态
             val service = AppMonitorService.instance
             val locked = service?.locked ?: false
