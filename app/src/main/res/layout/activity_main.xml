@@ -154,6 +154,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="设置答题数量"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="每题限时：30 秒"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnSetTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置每题限时"
                 android:textSize="13sp"/>
         </LinearLayout>
 
