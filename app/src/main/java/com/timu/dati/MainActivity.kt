@@ -23,26 +23,24 @@ class MainActivity : AppCompatActivity() {
     private val debugRunnable = object : Runnable {
         override fun run() {
             // 直接用UsageStatsManager检测，不依赖服务
-            var usageFg = "检测失败"
+            var debugText = ""
             try {
                 val usm = getSystemService("usagestats") as android.app.usage.UsageStatsManager
                 val end = System.currentTimeMillis()
-                val start = end - 1000 * 5
+                val start = end - 1000 * 30
                 val stats = usm.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_BEST, start, end)
                 if (!stats.isNullOrEmpty()) {
-                    var best: android.app.usage.UsageStats? = null
-                    for (s in stats) {
-                        if (best == null || s.lastTimeUsed > best.lastTimeUsed) best = s
-                    }
-                    usageFg = best?.packageName ?: "空"
+                    // 按使用时间排序，取前5个
+                    val sorted = stats.sortedByDescending { it.lastTimeUsed }
+                    debugText = sorted.take(5).joinToString("\n") { it.packageName }
                 } else {
-                    usageFg = "无数据"
+                    debugText = "无数据"
                 }
             } catch (e: Exception) {
-                usageFg = "异常: ${e.message}"
+                debugText = "异常: ${e.message}"
             }
             val serviceRunning = if (ForegroundMonitorService.instance != null) "服务运行中" else "服务未运行"
-            binding.tvDebugFg.text = "前台:$usageFg | $serviceRunning"
+            binding.tvDebugFg.text = "$serviceRunning\n最近使用的APP:\n$debugText"
             // 显示内部状态
             val service = ForegroundMonitorService.instance
             val locked = service?.locked ?: false

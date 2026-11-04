@@ -118,7 +118,7 @@ class ForegroundMonitorService : Service() {
         return try {
             val usm = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
             val end = System.currentTimeMillis()
-            val start = end - 1000 * 5
+            val start = end - 1000 * 30  // 最近30秒
             val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_BEST, start, end)
             if (stats.isNullOrEmpty()) return null
             var best: android.app.usage.UsageStats? = null

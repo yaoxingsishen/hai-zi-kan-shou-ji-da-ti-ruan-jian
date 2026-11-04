@@ -58,6 +58,8 @@ class AppMonitorService : AccessibilityService() {
         event ?: return
         val pkg = event.packageName?.toString() ?: return
         lastEventPkg = pkg  // 记录最近事件的包名，调试用
+        // 同步到前台服务
+        ForegroundMonitorService.instance?.currentPkg = pkg
         if (locked) return
         if (pkg == packageName || ignorePkgs.contains(pkg)) return
 
