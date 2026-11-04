@@ -105,12 +105,36 @@ object QuizBank {
     )
 
     /**
-     * 从指定学科中随机取一道题
+     * 随机取一道题（合并内置题库+用户题库，按指定学科筛选）
+     * @param subject 指定学科id，"all"表示全部
      */
-    fun randomQuestion(activeSubjects: Set<String>): Question {
-        val pools = activeSubjects.mapNotNull { bank[it] }
-        val all = pools.flatten()
-        return all.random()
+    fun randomQuestion(ctx: android.content.Context, subject: String = "all"): Question {
+        // 收集内置题库
+        val pool = mutableListOf<Question>()
+        if (subject == "all") {
+            bank.values.forEach { pool.addAll(it) }
+        } else {
+            bank[subject]?.let { pool.addAll(it) }
+        }
+        // 合并用户题库
+        Prefs.getUserQuestions(ctx).forEach { json ->
+            try {
+                val type = json.getString("type")
+                val q = json.getString("question")
+                val answer = json.getInt("answer")
+                val explain = if (json.has("explain")) json.getString("explain") else ""
+                val options = mutableListOf<String>()
+                if (json.has("options")) {
+                    val arr = json.getJSONArray("options")
+                    for (i in 0 until arr.length()) options.add(arr.getString(i))
+                }
+                val subj = if (json.has("subject")) json.getString("subject") else "custom"
+                if (subject == "all" || subj == subject || subject == "custom") {
+                    pool.add(Question(type, subj, q, options, answer, explain))
+                }
+            } catch (_: Exception) {}
+        }
+        return if (pool.isEmpty()) bank["math"]!!.random() else pool.random()
     }
 
     fun getSubjectName(id: String): String = subjects.find { it.id == id }?.name ?: id

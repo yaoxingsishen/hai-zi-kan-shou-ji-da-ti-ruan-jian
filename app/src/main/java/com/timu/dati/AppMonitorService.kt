@@ -80,7 +80,7 @@ class AppMonitorService : AccessibilityService() {
             locked = false
             goHome()
         }
-        overlay.show()
+        overlay.show(currentPkg ?: "")
     }
 
     /** 来电时撤遮罩 */

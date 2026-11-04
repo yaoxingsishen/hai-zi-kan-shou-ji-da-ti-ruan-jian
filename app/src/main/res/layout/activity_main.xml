@@ -157,6 +157,78 @@
                 android:textSize="13sp"/>
         </LinearLayout>
 
+        <!-- 题库管理卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📚 题库管理"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="12dp"/>
+
+            <TextView
+                android:id="@+id/tvQCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="用户题库：0 题"
+                android:textSize="13sp"
+                android:textColor="#6B7280"
+                android:paddingBottom="10dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnUploadQ"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="上传题库"
+                    android:textSize="13sp"
+                    android:layout_marginEnd="6dp"/>
+
+                <Button
+                    android:id="@+id/btnDownloadTpl"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="模板格式"
+                    android:textSize="13sp"
+                    android:layout_marginEnd="6dp"/>
+
+                <Button
+                    android:id="@+id/btnClearQ"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="清空"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 测试按钮 -->
+        <Button
+            android:id="@+id/btnTestQuiz"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🧪 测试答题界面（点我看效果）"
+            android:textSize="14sp"
+            android:background="#4F46E5"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp"/>
+
         <!-- 管控应用卡片 -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -180,6 +252,14 @@
                     android:text="📱 管控应用"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btnAllMonitored"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="全部管控"
+                    android:textSize="12sp"
+                    android:layout_marginEnd="8dp"/>
 
                 <Button
                     android:id="@+id/btnAddApp"
