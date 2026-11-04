@@ -274,7 +274,7 @@ class MainActivity : AppCompatActivity() {
             }.distinctBy { it.pkg }.sortedBy { it.name }
 
         // 搜索框 + 列表容器
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val layout = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
         val search = EditText(this@MainActivity).apply {
             hint = "输入应用名搜索..."
             setSingleLine(true)
@@ -349,10 +349,18 @@ class MainActivity : AppCompatActivity() {
                         // Excel编辑后另存为CSV即可导入
                         text.lines().forEach { line ->
                             if (line.isBlank() || line.startsWith("#")) return@forEach
+                            if (line.startsWith("type,") || line.startsWith("题型,")) return@forEach // 跳过表头
                             val parts = line.split(",")
                             if (parts.size < 5) return@forEach
                             val q = JSONObject()
-                            q.put("type", parts[0].trim())
+                            // 中文类型转英文
+                            val typeRaw = parts[0].trim()
+                            val type = when (typeRaw) {
+                                "单选", "single" -> "single"
+                                "判断", "judge" -> "judge"
+                                else -> typeRaw
+                            }
+                            q.put("type", type)
                             q.put("question", parts[1].trim())
                             val opts = JSONArray()
                             for (i in 2..5) if (parts.size > i && parts[i].isNotBlank()) opts.put(parts[i].trim())
