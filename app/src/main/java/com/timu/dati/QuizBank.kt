@@ -33,6 +33,10 @@ object QuizBank {
         "survival" to "野外求生"
     )
 
+    fun getSubjectName(subject: String): String {
+        return subjects.find { it.first == subject }?.second ?: "自定义"
+    }
+
     private val bank = mapOf(
         // ========== 数学 ==========
         "math" to listOf(
@@ -256,7 +260,7 @@ object QuizBank {
                 val n = if (difficulty >= 4) (10..200).random() else (10..100).random()
                 var isPrime = n > 1
                 for (i in 2 until n) { if (n % i == 0) { isPrime = false; break } }
-                Question("judge", "math", "$n 是质数。", emptyList(), if (isPrime) 1 else 0, if (isPrime) "$n是质数" else "$n不是质数")
+                Question("judge", "math", "${n} 是质数。", emptyList(), if (isPrime) 1 else 0, if (isPrime) "${n}是质数" else "${n}不是质数")
             }
         }
     }

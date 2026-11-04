@@ -210,8 +210,8 @@ class MainActivity : AppCompatActivity() {
                         }.show()
                 }
                 1 -> {
-                    val subs = listOf("全部随机") + QuizBank.subjects.map { it.icon + " " + it.name }
-                    val ids = listOf("all") + QuizBank.subjects.map { it.id }
+                    val subs = listOf("全部随机") + QuizBank.subjects.map { it.second }
+                    val ids = listOf("all") + QuizBank.subjects.map { it.first }
                     AlertDialog.Builder(this).setTitle("指定题库学科")
                         .setItems(subs.toTypedArray()) { _, i ->
                             Prefs.setAppSubject(this, app.pkg, ids[i])
