@@ -45,14 +45,20 @@ class AppMonitorService : AccessibilityService() {
         if (locked) return
         val pkg = event.packageName?.toString() ?: return
         if (pkg == packageName || ignorePkgs.contains(pkg)) return
-        val monitored = Prefs.getMonitoredApps(this)
-        if (monitored.contains(pkg) && pkg != currentPkg) {
-            // 切换了APP，重置计时
+
+        // 不管是不是管控APP，都更新currentPkg，作为兜底
+        if (pkg != currentPkg) {
             currentPkg = pkg
-            usageSeconds = 0L
-            // 如果是打开就弹模式，直接触发
-            if (Prefs.getPopupMode(this) == 0) {
-                handler.post { triggerQuiz() }
+            val monitored = Prefs.getMonitoredApps(this)
+            if (monitored.contains(pkg)) {
+                usageSeconds = 0L
+                // 如果是打开就弹模式，直接触发
+                if (Prefs.getPopupMode(this) == 0) {
+                    handler.post { triggerQuiz() }
+                }
+            } else {
+                // 切到非管控APP，重置计时
+                usageSeconds = 0L
             }
         }
     }
@@ -72,23 +78,32 @@ class AppMonitorService : AccessibilityService() {
 
         if (locked) return
 
-        val fg = getForegroundByWindows() ?: return
         val monitored = Prefs.getMonitoredApps(this)
+
+        // 优先用getWindows()检测前台，拿不到就用无障碍事件里的currentPkg兜底
+        var fg = getForegroundByWindows()
+        if (fg == null && currentPkg != null) {
+            fg = currentPkg
+        }
+        if (fg == null) return
 
         if (fg == packageName || ignorePkgs.contains(fg)) return
 
         if (monitored.contains(fg)) {
-            // 是管控APP，设置currentPkg并累计使用时长
+            // 是管控APP
             if (currentPkg != fg) {
+                // 刚切换到这个APP
                 currentPkg = fg
-                usageSeconds = 0L  // 切换了APP，重新计时
+                usageSeconds = 0L
+                // 打开就弹模式：tick里检测到刚打开也弹
+                if (Prefs.getPopupMode(this) == 0) {
+                    handler.post { triggerQuiz() }
+                }
             }
             usageSeconds += elapsed
 
             val mode = Prefs.getPopupMode(this)
-            if (mode == 0) {
-                // 打开就弹模式，已经在onAccessibilityEvent里触发了
-            } else {
+            if (mode == 1) {
                 // 定时弹模式：用了N分钟后弹
                 val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
                 if (usageSeconds >= intervalSec) {
@@ -98,7 +113,7 @@ class AppMonitorService : AccessibilityService() {
         } else {
             // 不在管控APP里，重置计时
             usageSeconds = 0L
-            currentPkg = null
+            // 注意：这里不要重置currentPkg，因为getWindows可能拿不到，要保留无障碍事件的值
         }
     }
 
