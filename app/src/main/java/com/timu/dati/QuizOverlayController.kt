@@ -315,21 +315,78 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             textSize = 16f
             setTypeface(typeface, Typeface.BOLD)
         })
-        val input = EditText(ctx).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = "4位数字密码"
+
+        // 密码显示框
+        val tvPin = TextView(ctx).apply {
+            text = "____"
+            textSize = 24f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(Color.parseColor("#4F46E5"))
             setPadding(0, dp(16), 0, dp(16))
-            isFocusable = true
-            isFocusableInTouchMode = true
+            gravity = android.view.Gravity.CENTER
         }
-        layout.addView(input)
-        // 窗口显示后再触发焦点和输入法
-        layout.postDelayed({
-            input.requestFocus()
-            input.requestFocusFromTouch()
-            val imm = ctx.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-            imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-        }, 300)
+        layout.addView(tvPin)
+
+        // 数字键盘
+        val keyboard = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        val pinBuilder = StringBuilder()
+        fun updatePinDisplay() {
+            val s = pinBuilder.toString()
+            tvPin.text = if (s.isEmpty()) "____" else s.padEnd(4, '_')
+        }
+        fun addNumRow(nums: List<String>) {
+            val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = 3f }
+            nums.forEach { n ->
+                val btn = android.view.View(ctx)
+                row.addView(android.widget.Button(ctx).apply {
+                    text = n
+                    textSize = 18f
+                    setAllCaps(false)
+                    layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f)
+                    setOnClickListener {
+                        if (pinBuilder.length < 4) {
+                            pinBuilder.append(n)
+                            updatePinDisplay()
+                            if (pinBuilder.length == 4) {
+                                // 输满4位自动验证
+                                if (pinBuilder.toString() == Prefs.getPin(ctx)) {
+                                    try { wm.removeView(layout) } catch (_: Exception) {}
+                                    hide(); onCancel?.invoke()
+                                } else {
+                                    Toast.makeText(ctx, "密码错误", Toast.LENGTH_SHORT).show()
+                                    pinBuilder.clear()
+                                    updatePinDisplay()
+                                }
+                            }
+                        }
+                    }
+                })
+            }
+            keyboard.addView(row)
+        }
+        addNumRow(listOf("1", "2", "3"))
+        addNumRow(listOf("4", "5", "6"))
+        addNumRow(listOf("7", "8", "9"))
+        // 最后一行：清空、0、删除
+        val lastRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = 3f }
+        lastRow.addView(android.widget.Button(ctx).apply {
+            text = "清空"; setAllCaps(false); textSize = 14f
+            layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f)
+            setOnClickListener { pinBuilder.clear(); updatePinDisplay() }
+        })
+        lastRow.addView(android.widget.Button(ctx).apply {
+            text = "0"; textSize = 18f; setAllCaps(false)
+            layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f)
+            setOnClickListener { if (pinBuilder.length < 4) { pinBuilder.append("0"); updatePinDisplay() } }
+        })
+        lastRow.addView(android.widget.Button(ctx).apply {
+            text = "删除"; setAllCaps(false); textSize = 14f
+            layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f)
+            setOnClickListener { if (pinBuilder.isNotEmpty()) { pinBuilder.deleteCharAt(pinBuilder.length - 1); updatePinDisplay() } }
+        })
+        keyboard.addView(lastRow)
+        layout.addView(keyboard)
+
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
         row.addView(Button(ctx).apply {
             text = "取消"; setAllCaps(false)
@@ -340,18 +397,18 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             text = "确定"; setAllCaps(false); setTextColor(Color.WHITE)
             background = GradientDrawable().apply { setColor(Color.parseColor("#4F46E5")); cornerRadius = dp(8).toFloat() }
             setOnClickListener {
-                if (input.text.toString() == Prefs.getPin(ctx)) {
+                if (pinBuilder.toString() == Prefs.getPin(ctx)) {
                     try { wm.removeView(layout) } catch (_: Exception) {}
                     hide(); onCancel?.invoke()
                 } else Toast.makeText(ctx, "密码错误", Toast.LENGTH_SHORT).show()
             }
         })
         layout.addView(row)
+
         val params = WindowManager.LayoutParams(
-            (ctx.resources.displayMetrics.widthPixels * 0.8).toInt(),
+            (ctx.resources.displayMetrics.widthPixels * 0.85).toInt(),
             ViewGroup.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         ).apply { gravity = Gravity.CENTER }
