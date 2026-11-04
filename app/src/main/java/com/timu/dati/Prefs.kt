@@ -24,6 +24,10 @@ object Prefs {
     fun getDefaultQNeeded(ctx: Context): Int = sp(ctx).getInt("default_q_needed", 3)
     fun setDefaultQNeeded(ctx: Context, n: Int) = sp(ctx).edit().putInt("default_q_needed", n).apply()
 
+    // 难度：1=简单 2=一般 3=难 4=奥林匹克
+    fun getDifficulty(ctx: Context): Int = sp(ctx).getInt("difficulty", 2)
+    fun setDifficulty(ctx: Context, n: Int) = sp(ctx).edit().putInt("difficulty", n).apply()
+
     // ===== 管控APP列表 =====
     fun getMonitoredApps(ctx: Context): MutableSet<String> =
         sp(ctx).getStringSet("monitored", mutableSetOf())?.toMutableSet() ?: mutableSetOf()

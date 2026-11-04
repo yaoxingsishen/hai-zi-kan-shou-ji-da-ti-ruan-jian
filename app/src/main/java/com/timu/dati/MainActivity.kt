@@ -79,8 +79,19 @@ class MainActivity : AppCompatActivity() {
                     refreshSettings()
                 }.show()
         }
+        binding.btnSetDifficulty.setOnClickListener {
+            val items = arrayOf("🟢 简单", "🟡 一般", "🟠 难", "🔴 奥林匹克")
+            AlertDialog.Builder(this).setTitle("选择题目难度")
+                .setItems(items) { _, which ->
+                    Prefs.setDifficulty(this, which + 1)
+                    refreshSettings()
+                }.show()
+        }
         binding.btnUploadQ.setOnClickListener {
-            val intent = Intent(Intent.ACTION_GET_CONTENT).apply { type = "application/json" }
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "*/*"
+                addCategory(Intent.CATEGORY_OPENABLE)
+            }
             startActivityForResult(intent, FILE_REQ)
         }
         binding.btnDownloadTpl.setOnClickListener {
@@ -161,6 +172,8 @@ class MainActivity : AppCompatActivity() {
         binding.tvPin.text = "密码：" + Prefs.getPin(this)
         binding.tvCount.text = "默认答对：${Prefs.getDefaultQNeeded(this)} 道"
         binding.tvTime.text = "每题限时：${Prefs.getTimePerQ(this)} 秒"
+        val diffNames = listOf("简单", "一般", "难", "奥林匹克")
+        binding.tvDifficulty.text = "题目难度：${diffNames[Prefs.getDifficulty(this) - 1]}"
     }
 
     private fun refreshQCount() {
@@ -266,12 +279,61 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == FILE_REQ && resultCode == RESULT_OK) {
             data?.data?.let { uri ->
                 try {
-                    val input = contentResolver.openInputStream(uri)
-                    val text = input?.bufferedReader().use { it?.readText() }
-                    val json = JSONObject(text ?: "{}")
-                    val arr = json.getJSONArray("questions")
                     val list = mutableListOf<JSONObject>()
-                    for (i in 0 until arr.length()) list.add(arr.getJSONObject(i))
+                    // 判断文件类型
+                    val mimeType = contentResolver.getType(uri) ?: ""
+                    val fileName = uri.lastPathSegment ?: ""
+                    if (mimeType.contains("sheet") || fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+                        // xlsx格式：用POI解析
+                        val input = contentResolver.openInputStream(uri)
+                        val wb = org.apache.poi.ss.usermodel.WorkbookFactory.create(input)
+                        val sheet = wb.getSheetAt(0)
+                        for (row in sheet) {
+                            if (row.rowNum == 0) continue // 跳过表头
+                            val type = row.getCell(0)?.toString()?.trim() ?: continue
+                            if (type.isBlank()) continue
+                            val qText = row.getCell(1)?.toString()?.trim() ?: continue
+                            val q = JSONObject()
+                            q.put("type", type)
+                            q.put("question", qText)
+                            val opts = JSONArray()
+                            for (i in 2..5) {
+                                val c = row.getCell(i)
+                                if (c != null && c.toString().isNotBlank()) opts.put(c.toString().trim())
+                            }
+                            q.put("options", opts)
+                            val ansCell = row.getCell(6)
+                            q.put("answer", ansCell?.numericCellValue?.toInt() ?: 0)
+                            val exCell = row.getCell(7)
+                            if (exCell != null) q.put("explain", exCell.toString().trim())
+                            list.add(q)
+                        }
+                        wb.close()
+                    } else {
+                        // JSON或CSV格式
+                        val input = contentResolver.openInputStream(uri)
+                        val text = input?.bufferedReader().use { it?.readText() } ?: ""
+                        if (text.trimStart().startsWith("{")) {
+                            val json = JSONObject(text)
+                            val arr = json.getJSONArray("questions")
+                            for (i in 0 until arr.length()) list.add(arr.getJSONObject(i))
+                        } else {
+                            text.lines().forEach { line ->
+                                if (line.isBlank() || line.startsWith("#")) return@forEach
+                                val parts = line.split(",")
+                                if (parts.size < 5) return@forEach
+                                val q = JSONObject()
+                                q.put("type", parts[0].trim())
+                                q.put("question", parts[1].trim())
+                                val opts = JSONArray()
+                                for (i in 2..5) if (parts.size > i && parts[i].isNotBlank()) opts.put(parts[i].trim())
+                                q.put("options", opts)
+                                q.put("answer", parts[6].trim().toIntOrNull() ?: 0)
+                                if (parts.size > 7) q.put("explain", parts[7].trim())
+                                list.add(q)
+                            }
+                        }
+                    }
                     Prefs.addUserQuestions(this, list)
                     refreshQCount()
                     Toast.makeText(this, "成功导入 ${list.size} 道题", Toast.LENGTH_LONG).show()

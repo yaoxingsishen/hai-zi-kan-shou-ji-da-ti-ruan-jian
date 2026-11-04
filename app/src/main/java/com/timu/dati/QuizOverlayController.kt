@@ -151,7 +151,10 @@ class QuizOverlayController private constructor(private val ctx: Context) {
         qCard.addView(optionsContainer)
         root.addView(qCard)
 
-        container.addView(root)
+        container.addView(root, ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
         rootView = container
 
         val params = WindowManager.LayoutParams(
@@ -339,7 +342,9 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             (ctx.resources.displayMetrics.widthPixels * 0.8).toInt(),
             ViewGroup.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or 
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+            WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
             PixelFormat.TRANSLUCENT
         ).apply { gravity = Gravity.CENTER }
         try { wm.addView(layout, params) } catch (_: Exception) {}
