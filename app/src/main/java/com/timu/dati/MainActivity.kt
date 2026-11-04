@@ -62,6 +62,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         showPasswordGate()
+        // 启动前台服务，保持后台运行
+        startForegroundService(android.content.Intent(this, AppMonitorService::class.java))
     }
 
     override fun onResume() {

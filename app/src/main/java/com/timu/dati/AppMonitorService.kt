@@ -94,44 +94,30 @@ class AppMonitorService : AccessibilityService() {
         if (locked) return
 
         val monitored = Prefs.getMonitoredApps(this)
+        if (monitored.isEmpty()) return  // 没设置管控APP，不弹
 
         // 三重兜底检测前台包名（UsageStats优先，小米上最可靠）
-        var fg: String? = getForegroundByUsageStats()  // 第一重：UsageStatsManager（最可靠）
-        if (fg == null) {
-            fg = currentPkg  // 第二重：无障碍事件记录的
-        }
-        if (fg == null) {
-            fg = getForegroundByWindows()  // 第三重：getWindows轮询
-        }
-        if (fg == null) return
+        var fg: String? = getForegroundByUsageStats()
+        if (fg == null) fg = currentPkg
+        if (fg == null) fg = getForegroundByWindows()
 
-        if (fg == packageName || ignorePkgs.contains(fg)) return
+        // 不管检测到什么，只要有管控APP就累计全局使用时间
+        usageSeconds += elapsed
 
-        if (monitored.contains(fg)) {
-            // 是管控APP
-            if (currentPkg != fg) {
-                // 刚切换到这个APP
+        val mode = Prefs.getPopupMode(this)
+        if (mode == 0) {
+            // 打开就弹模式：检测到刚打开管控APP就弹
+            if (fg != null && monitored.contains(fg) && currentPkg != fg) {
                 currentPkg = fg
                 usageSeconds = 0L
-                // 打开就弹模式：检测到刚打开就弹
-                if (Prefs.getPopupMode(this) == 0) {
-                    handler.post { triggerQuiz() }
-                }
-            }
-            usageSeconds += elapsed
-
-            val mode = Prefs.getPopupMode(this)
-            if (mode == 1) {
-                // 定时弹模式：用了N分钟后弹
-                val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
-                if (usageSeconds >= intervalSec) {
-                    triggerQuiz()
-                }
+                handler.post { triggerQuiz() }
             }
         } else {
-            // 不在管控APP里，重置计时
-            usageSeconds = 0L
-            // 注意：不重置currentPkg，因为getWindows可能拿不到，要保留无障碍事件的值
+            // 定时弹模式：每N分钟弹一次（不管前台是什么）
+            val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
+            if (usageSeconds >= intervalSec) {
+                triggerQuiz()
+            }
         }
     }
 
