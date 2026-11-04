@@ -27,7 +27,7 @@ class AppMonitorService : AccessibilityService() {
     private val tickRunnable = object : Runnable {
         override fun run() {
             tick()
-            handler.postDelayed(this, 1000L)  // 每秒tick一次
+            handler.postDelayed(this, 500L)  // 每0.5秒tick一次
         }
     }
 
@@ -66,11 +66,11 @@ class AppMonitorService : AccessibilityService() {
     }
 
     private fun tick() {
-        if (locked) return
-
         val now = System.currentTimeMillis()
         val elapsed = (now - lastTickTime) / 1000
         lastTickTime = now
+
+        if (locked) return
 
         val fg = getForegroundByWindows() ?: return
         val monitored = Prefs.getMonitoredApps(this)
@@ -78,7 +78,11 @@ class AppMonitorService : AccessibilityService() {
         if (fg == packageName || ignorePkgs.contains(fg)) return
 
         if (monitored.contains(fg)) {
-            // 是管控APP，累计使用时长
+            // 是管控APP，设置currentPkg并累计使用时长
+            if (currentPkg != fg) {
+                currentPkg = fg
+                usageSeconds = 0L  // 切换了APP，重新计时
+            }
             usageSeconds += elapsed
 
             val mode = Prefs.getPopupMode(this)
@@ -87,7 +91,7 @@ class AppMonitorService : AccessibilityService() {
             } else {
                 // 定时弹模式：用了N分钟后弹
                 val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
-                if (usageSeconds >= intervalSec && currentPkg != null) {
+                if (usageSeconds >= intervalSec) {
                     triggerQuiz()
                 }
             }
@@ -177,6 +181,20 @@ class AppMonitorService : AccessibilityService() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // 启动前台服务，加常驻通知，防止后台被杀死
+        val channelId = "quiz_monitor"
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId, "答题锁服务", android.app.NotificationManager.IMPORTANCE_LOW
+            )
+            getSystemService(android.app.NotificationManager::class.java).createNotificationChannel(channel)
+        }
+        val notification = android.app.Notification.Builder(this, channelId)
+            .setContentTitle("答题锁运行中")
+            .setContentText("正在后台监控管控应用")
+            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .build()
+        startForeground(1, notification)
     }
 
     override fun onDestroy() {

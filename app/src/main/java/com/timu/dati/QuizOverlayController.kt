@@ -323,8 +323,9 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             postDelayed({
                 requestFocus()
                 val imm = ctx.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-                imm.showSoftInput(this, android.view.inputmethod.InputMethodManager.SHOW_FORCED)
-            }, 200)
+                imm.showSoftInput(this, 0)
+                imm.toggleSoftInput(android.view.inputmethod.InputMethodManager.SHOW_FORCED, 0)
+            }, 300)
         }
         layout.addView(input)
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
@@ -348,7 +349,7 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             (ctx.resources.displayMetrics.widthPixels * 0.8).toInt(),
             ViewGroup.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or 
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
