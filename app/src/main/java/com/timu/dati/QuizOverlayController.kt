@@ -316,18 +316,20 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             setTypeface(typeface, Typeface.BOLD)
         })
         val input = EditText(ctx).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            inputType = InputType.TYPE_CLASS_NUMBER
             hint = "4位数字密码"
             setPadding(0, dp(16), 0, dp(16))
-            // 自动弹出输入法
-            postDelayed({
-                requestFocus()
-                val imm = ctx.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-                imm.showSoftInput(this, 0)
-                imm.toggleSoftInput(android.view.inputmethod.InputMethodManager.SHOW_FORCED, 0)
-            }, 300)
+            isFocusable = true
+            isFocusableInTouchMode = true
         }
         layout.addView(input)
+        // 窗口显示后再触发焦点和输入法
+        layout.postDelayed({
+            input.requestFocus()
+            input.requestFocusFromTouch()
+            val imm = ctx.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }, 300)
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
         row.addView(Button(ctx).apply {
             text = "取消"; setAllCaps(false)
