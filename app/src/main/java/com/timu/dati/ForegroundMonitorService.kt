@@ -25,8 +25,8 @@ class ForegroundMonitorService : Service() {
     @Volatile
     var locked = false
         private set
+    @Volatile
     var currentPkg: String? = null
-        private set
     private var usageSeconds = 0L
     private var lastTickTime = 0L
     private val handler = Handler(Looper.getMainLooper())
