@@ -319,6 +319,12 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
             hint = "4位数字密码"
             setPadding(0, dp(16), 0, dp(16))
+            // 自动弹出输入法
+            post {
+                requestFocus()
+                val imm = ctx.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.showSoftInput(this, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            }
         }
         layout.addView(input)
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
@@ -344,7 +350,8 @@ class QuizOverlayController private constructor(private val ctx: Context) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or 
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-            WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
+            WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         ).apply { gravity = Gravity.CENTER }
         try { wm.addView(layout, params) } catch (_: Exception) {}

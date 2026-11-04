@@ -28,6 +28,14 @@ object Prefs {
     fun getDifficulty(ctx: Context): Int = sp(ctx).getInt("difficulty", 2)
     fun setDifficulty(ctx: Context, n: Int) = sp(ctx).edit().putInt("difficulty", n).apply()
 
+    // 弹出模式：0=打开就弹，1=使用N分钟后弹
+    fun getPopupMode(ctx: Context): Int = sp(ctx).getInt("popup_mode", 0)
+    fun setPopupMode(ctx: Context, n: Int) = sp(ctx).edit().putInt("popup_mode", n).apply()
+
+    // 定时弹：每N分钟弹一次
+    fun getPopupIntervalMin(ctx: Context): Int = sp(ctx).getInt("popup_interval_min", 10)
+    fun setPopupIntervalMin(ctx: Context, n: Int) = sp(ctx).edit().putInt("popup_interval_min", n).apply()
+
     // ===== 管控APP列表 =====
     fun getMonitoredApps(ctx: Context): MutableSet<String> =
         sp(ctx).getStringSet("monitored", mutableSetOf())?.toMutableSet() ?: mutableSetOf()

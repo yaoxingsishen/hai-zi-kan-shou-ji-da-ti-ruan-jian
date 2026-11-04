@@ -87,6 +87,26 @@ class MainActivity : AppCompatActivity() {
                     refreshSettings()
                 }.show()
         }
+        binding.btnSetPopupMode.setOnClickListener {
+            val items = arrayOf("打开就弹答题", "使用N分钟后弹答题")
+            AlertDialog.Builder(this).setTitle("弹出模式")
+                .setItems(items) { _, which ->
+                    Prefs.setPopupMode(this, which)
+                    if (which == 1) {
+                        val et = EditText(this).apply {
+                            inputType = InputType.TYPE_CLASS_NUMBER
+                            setText(Prefs.getPopupIntervalMin(this@MainActivity).toString())
+                            hint = "每多少分钟弹一次？"
+                        }
+                        AlertDialog.Builder(this).setTitle("间隔（分钟）").setView(et)
+                            .setPositiveButton("确定") { _, _ ->
+                                Prefs.setPopupIntervalMin(this, (et.text.toString().toIntOrNull() ?: 10).coerceAtLeast(1))
+                                refreshSettings()
+                            }.show()
+                    }
+                    refreshSettings()
+                }.show()
+        }
         binding.btnUploadQ.setOnClickListener {
             val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
                 type = "*/*"
@@ -174,6 +194,8 @@ class MainActivity : AppCompatActivity() {
         binding.tvTime.text = "每题限时：${Prefs.getTimePerQ(this)} 秒"
         val diffNames = listOf("简单", "一般", "难", "奥林匹克")
         binding.tvDifficulty.text = "题目难度：${diffNames[Prefs.getDifficulty(this) - 1]}"
+        val mode = Prefs.getPopupMode(this)
+        binding.tvPopupMode.text = if (mode == 0) "弹出模式：打开就弹" else "弹出模式：每${Prefs.getPopupIntervalMin(this)}分钟弹一次"
     }
 
     private fun refreshQCount() {
@@ -244,19 +266,54 @@ class MainActivity : AppCompatActivity() {
     private fun loadAppList() {
         val pm = packageManager
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val apps = pm.queryIntentActivities(intent, 0)
+        val allApps = pm.queryIntentActivities(intent, 0)
             .map {
                 val pkg = it.activityInfo.packageName
                 AppInfo(pkg, it.loadLabel(pm).toString(), it.loadIcon(pm),
                     Prefs.getMonitoredApps(this).contains(pkg))
             }.distinctBy { it.pkg }.sortedBy { it.name }
-        AlertDialog.Builder(this).setTitle("选择管控应用")
-            .setMultiChoiceItems(apps.map { it.name }.toTypedArray(),
-                BooleanArray(apps.size) { apps[it].monitored }) { _, which, isChecked ->
-                apps[which].monitored = isChecked
-            }.setPositiveButton("确定") { _, _ ->
+
+        // 搜索框 + 列表容器
+        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val search = EditText(this@MainActivity).apply {
+            hint = "输入应用名搜索..."
+            setSingleLine(true)
+        }
+        layout.addView(search)
+        val listView = android.widget.ListView(this)
+        layout.addView(listView)
+
+        fun updateList(filter: String) {
+            val filtered = if (filter.isBlank()) allApps else allApps.filter {
+                it.name.contains(filter, ignoreCase = true) || it.pkg.contains(filter, ignoreCase = true)
+            }
+            val adapter = object : android.widget.ArrayAdapter<String>(
+                this@MainActivity, android.R.layout.simple_list_item_multiple_choice,
+                filtered.map { it.name }.toTypedArray()
+            ) {}
+            listView.adapter = adapter
+            listView.choiceMode = android.widget.ListView.CHOICE_MODE_MULTIPLE
+            filtered.forEachIndexed { i, app ->
+                listView.setItemChecked(i, app.monitored)
+            }
+            listView.onItemClickListener = android.widget.AdapterView.OnItemClickListener { _, _, pos, _ ->
+                filtered[pos].monitored = listView.isItemChecked(pos)
+            }
+        }
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {}
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                updateList(s.toString())
+            }
+        })
+        updateList("")
+
+        AlertDialog.Builder(this).setTitle("选择管控应用（可搜索）")
+            .setView(layout)
+            .setPositiveButton("确定") { _, _ ->
                 val set = Prefs.getMonitoredApps(this)
-                apps.forEach { if (it.monitored) set.add(it.pkg) else set.remove(it.pkg) }
+                allApps.forEach { if (it.monitored) set.add(it.pkg) else set.remove(it.pkg) }
                 Prefs.setMonitoredApps(this, set)
                 loadMonitoredApps()
             }.show()

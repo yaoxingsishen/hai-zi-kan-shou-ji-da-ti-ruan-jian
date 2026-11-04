@@ -16,14 +16,18 @@ import android.view.accessibility.AccessibilityWindowInfo
 class AppMonitorService : AccessibilityService() {
 
     @Volatile
-    private var locked = false  // 是否正在答题锁定中
+    private var locked = false
     private var currentPkg: String? = null
     private val handler = Handler(Looper.getMainLooper())
+
+    // 使用时长计时（秒）
+    private var usageSeconds = 0L
+    private var lastTickTime = 0L
 
     private val tickRunnable = object : Runnable {
         override fun run() {
             tick()
-            handler.postDelayed(this, 800L)
+            handler.postDelayed(this, 1000L)  // 每秒tick一次
         }
     }
 
@@ -32,19 +36,24 @@ class AppMonitorService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         buildIgnorePkgs()
+        lastTickTime = System.currentTimeMillis()
         handler.post(tickRunnable)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
         if (locked) return
-        // 从事件里直接取包名，比getWindows()更可靠
         val pkg = event.packageName?.toString() ?: return
         if (pkg == packageName || ignorePkgs.contains(pkg)) return
         val monitored = Prefs.getMonitoredApps(this)
         if (monitored.contains(pkg) && pkg != currentPkg) {
+            // 切换了APP，重置计时
             currentPkg = pkg
-            handler.post { triggerQuiz() }
+            usageSeconds = 0L
+            // 如果是打开就弹模式，直接触发
+            if (Prefs.getPopupMode(this) == 0) {
+                handler.post { triggerQuiz() }
+            }
         }
     }
 
@@ -57,18 +66,35 @@ class AppMonitorService : AccessibilityService() {
     }
 
     private fun tick() {
-        // 已经在答题锁定中，不重复触发
         if (locked) return
+
+        val now = System.currentTimeMillis()
+        val elapsed = (now - lastTickTime) / 1000
+        lastTickTime = now
 
         val fg = getForegroundByWindows() ?: return
         val monitored = Prefs.getMonitoredApps(this)
 
-        // 自己的APP或忽略包，跳过
         if (fg == packageName || ignorePkgs.contains(fg)) return
 
         if (monitored.contains(fg)) {
-            currentPkg = fg
-            triggerQuiz()
+            // 是管控APP，累计使用时长
+            usageSeconds += elapsed
+
+            val mode = Prefs.getPopupMode(this)
+            if (mode == 0) {
+                // 打开就弹模式，已经在onAccessibilityEvent里触发了
+            } else {
+                // 定时弹模式：用了N分钟后弹
+                val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
+                if (usageSeconds >= intervalSec && currentPkg != null) {
+                    triggerQuiz()
+                }
+            }
+        } else {
+            // 不在管控APP里，重置计时
+            usageSeconds = 0L
+            currentPkg = null
         }
     }
 

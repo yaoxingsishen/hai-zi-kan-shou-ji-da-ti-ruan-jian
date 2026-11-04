@@ -186,6 +186,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="选择题目难度"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvPopupMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="弹出模式：打开就弹"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnSetPopupMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置弹出模式"
                 android:textSize="13sp"/>
         </LinearLayout>
 
