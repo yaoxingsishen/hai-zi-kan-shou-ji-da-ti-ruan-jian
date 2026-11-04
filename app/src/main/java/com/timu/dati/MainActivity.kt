@@ -24,7 +24,26 @@ class MainActivity : AppCompatActivity() {
         override fun run() {
             val fg = AppMonitorService.getCurrentForeground()
             val lastEvent = AppMonitorService.instance?.lastEventPkg ?: "无"
-            binding.tvDebugFg.text = "当前前台：${fg ?: "未检测到"} | 最近事件：$lastEvent"
+            // 直接用UsageStatsManager检测一次，不依赖service
+            var usageFg = "检测失败"
+            try {
+                val usm = getSystemService("usagestats") as android.app.usage.UsageStatsManager
+                val end = System.currentTimeMillis()
+                val start = end - 1000 * 10
+                val stats = usm.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_BEST, start, end)
+                if (!stats.isNullOrEmpty()) {
+                    var best: android.app.usage.UsageStats? = null
+                    for (s in stats) {
+                        if (best == null || s.lastTimeUsed > best.lastTimeUsed) best = s
+                    }
+                    usageFg = best?.packageName ?: "空"
+                } else {
+                    usageFg = "无数据"
+                }
+            } catch (e: Exception) {
+                usageFg = "异常: ${e.message}"
+            }
+            binding.tvDebugFg.text = "前台:${fg ?: "无"} | 事件:$lastEvent | UsageStats:$usageFg"
             // 显示内部状态
             val service = AppMonitorService.instance
             val locked = service?.locked ?: false

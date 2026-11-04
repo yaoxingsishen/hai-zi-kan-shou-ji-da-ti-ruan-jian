@@ -95,13 +95,13 @@ class AppMonitorService : AccessibilityService() {
 
         val monitored = Prefs.getMonitoredApps(this)
 
-        // 三重兜底检测前台包名
-        var fg: String? = currentPkg  // 第一重：无障碍事件记录的
+        // 三重兜底检测前台包名（UsageStats优先，小米上最可靠）
+        var fg: String? = getForegroundByUsageStats()  // 第一重：UsageStatsManager（最可靠）
         if (fg == null) {
-            fg = getForegroundByWindows()  // 第二重：getWindows轮询
+            fg = currentPkg  // 第二重：无障碍事件记录的
         }
         if (fg == null) {
-            fg = getForegroundByUsageStats()  // 第三重：UsageStatsManager
+            fg = getForegroundByWindows()  // 第三重：getWindows轮询
         }
         if (fg == null) return
 
