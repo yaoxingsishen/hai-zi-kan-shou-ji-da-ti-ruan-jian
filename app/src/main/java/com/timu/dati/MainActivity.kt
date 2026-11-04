@@ -19,12 +19,39 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var appList = mutableListOf<AppInfo>()
     private val FILE_REQ = 1001
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val debugRunnable = object : Runnable {
+        override fun run() {
+            val fg = AppMonitorService.getCurrentForeground()
+            binding.tvDebugFg.text = "当前前台：${fg ?: "未检测到"}"
+            // 显示内部状态
+            val service = AppMonitorService.instance
+            val locked = service?.locked ?: false
+            val cooldownMin = Prefs.getCooldownMin(this@MainActivity)
+            val lastPass = Prefs.getLastPassTime(this@MainActivity)
+            val elapsedSec = ((System.currentTimeMillis() - lastPass) / 1000).toInt()
+            val remainSec = (cooldownMin * 60 - elapsedSec).coerceAtLeast(0)
+            val monitoredCount = Prefs.getMonitoredApps(this@MainActivity).size
+            binding.tvDebugStatus.text = "locked: $locked | 冷却剩余: ${remainSec}秒 | 管控APP数: $monitoredCount"
+            handler.postDelayed(this, 500)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         showPasswordGate()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        handler.post(debugRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(debugRunnable)
     }
 
     private fun showPasswordGate() {
@@ -55,6 +82,19 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnA11yPerm.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+        binding.btnUsagePerm.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        }
+        binding.btnDebugReset.setOnClickListener {
+            // 重置所有状态
+            Prefs.setLastPassTime(this, 0L)
+            AppMonitorService.instance?.let {
+                it.locked = false
+                it.currentPkg = null
+                it.usageSeconds = 0L
+            }
+            Toast.makeText(this, "已重置！现在打开抖音测试", Toast.LENGTH_LONG).show()
         }
         binding.btnSetPin.setOnClickListener { showPinDialog() }
         binding.btnSetCount.setOnClickListener {
@@ -198,6 +238,13 @@ class MainActivity : AppCompatActivity() {
         binding.tvOverlayStatus.text = if (Settings.canDrawOverlays(this)) "✅ 已开启" else "❌ 未开启"
         val a11y = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
         binding.tvA11yStatus.text = if (a11y?.contains(packageName) == true) "✅ 已开启" else "❌ 未开启"
+        // 检查使用情况访问权限
+        val appOps = getSystemService(APP_OPS_SERVICE) as android.app.AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(), packageName
+        )
+        binding.tvUsageStatus.text = if (mode == android.app.AppOpsManager.MODE_ALLOWED) "✅ 已开启" else "❌ 未开启"
     }
 
     private fun refreshSettings() {

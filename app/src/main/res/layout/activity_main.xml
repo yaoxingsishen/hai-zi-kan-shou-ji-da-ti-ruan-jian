@@ -19,6 +19,36 @@
             android:textColor="#1F2937"
             android:paddingBottom="4dp"/>
 
+        <!-- 调试用：显示当前检测到的前台包名 -->
+        <TextView
+            android:id="@+id/tvDebugFg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="当前前台：未检测到"
+            android:textSize="12sp"
+            android:textColor="#EF4444"
+            android:paddingBottom="4dp"/>
+
+        <!-- 调试用：显示内部状态 -->
+        <TextView
+            android:id="@+id/tvDebugStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="locked: false | 冷却: 0秒 | 管控数: 0"
+            android:textSize="11sp"
+            android:textColor="#9CA3AF"
+            android:paddingBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnDebugReset"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="重置调试状态（清除锁定/冷却）"
+            android:textSize="12sp"
+            android:background="#FEE2E2"
+            android:textColor="#DC2626"
+            android:layout_marginBottom="12dp"/>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -99,6 +129,38 @@
 
                 <Button
                     android:id="@+id/btnA11yPerm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="去开启"
+                    android:textSize="12sp"
+                    android:minWidth="60dp"/>
+            </LinearLayout>
+
+            <!-- 使用情况访问权限（小米手机必须开这个才能检测到前台APP） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="12dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="使用情况访问"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/tvUsageStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="❌ 未开启"
+                    android:textSize="13sp"
+                    android:paddingEnd="12dp"/>
+
+                <Button
+                    android:id="@+id/btnUsagePerm"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="去开启"

@@ -80,10 +80,13 @@ class AppMonitorService : AccessibilityService() {
 
         val monitored = Prefs.getMonitoredApps(this)
 
-        // 优先用getWindows()检测前台，拿不到就用无障碍事件里的currentPkg兜底
-        var fg = getForegroundByWindows()
-        if (fg == null && currentPkg != null) {
-            fg = currentPkg
+        // 三重兜底检测前台包名
+        var fg: String? = currentPkg  // 第一重：无障碍事件记录的
+        if (fg == null) {
+            fg = getForegroundByWindows()  // 第二重：getWindows轮询
+        }
+        if (fg == null) {
+            fg = getForegroundByUsageStats()  // 第三重：UsageStatsManager
         }
         if (fg == null) return
 
@@ -95,7 +98,7 @@ class AppMonitorService : AccessibilityService() {
                 // 刚切换到这个APP
                 currentPkg = fg
                 usageSeconds = 0L
-                // 打开就弹模式：tick里检测到刚打开也弹
+                // 打开就弹模式：检测到刚打开就弹
                 if (Prefs.getPopupMode(this) == 0) {
                     handler.post { triggerQuiz() }
                 }
@@ -113,7 +116,30 @@ class AppMonitorService : AccessibilityService() {
         } else {
             // 不在管控APP里，重置计时
             usageSeconds = 0L
-            // 注意：这里不要重置currentPkg，因为getWindows可能拿不到，要保留无障碍事件的值
+            // 注意：不重置currentPkg，因为getWindows可能拿不到，要保留无障碍事件的值
+        }
+    }
+
+    /**
+     * 第三重兜底：用UsageStatsManager获取前台APP
+     */
+    private fun getForegroundByUsageStats(): String? {
+        return try {
+            val usm = getSystemService(android.app.UsageStatsManager::class.java)
+            val end = System.currentTimeMillis()
+            val start = end - 1000 * 5  // 最近5秒
+            val stats = usm.queryUsageStats(android.app.UsageStatsManager.INTERVAL_BEST, start, end)
+            if (stats.isNullOrEmpty()) return null
+            // 找最近使用的
+            var best: android.app.usage.UsageStats? = null
+            for (s in stats) {
+                if (best == null || s.lastTimeUsed > best.lastTimeUsed) {
+                    best = s
+                }
+            }
+            best?.packageName
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -191,6 +217,9 @@ class AppMonitorService : AccessibilityService() {
         @Volatile
         var instance: AppMonitorService? = null
             private set
+
+        // 调试用：暴露当前检测到的前台包名
+        fun getCurrentForeground(): String? = instance?.currentPkg
     }
 
     override fun onCreate() {
