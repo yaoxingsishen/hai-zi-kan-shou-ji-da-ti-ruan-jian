@@ -107,6 +107,18 @@ class MainActivity : AppCompatActivity() {
                     refreshSettings()
                 }.show()
         }
+        binding.btnSetCooldown.setOnClickListener {
+            val et = EditText(this).apply {
+                inputType = InputType.TYPE_CLASS_NUMBER
+                setText(Prefs.getCooldownMin(this@MainActivity).toString())
+                hint = "答对题后多少分钟内不再弹？"
+            }
+            AlertDialog.Builder(this).setTitle("冷却时间（分钟）").setView(et)
+                .setPositiveButton("确定") { _, _ ->
+                    Prefs.setCooldownMin(this, (et.text.toString().toIntOrNull() ?: 30).coerceAtLeast(1))
+                    refreshSettings()
+                }.show()
+        }
         binding.btnUploadQ.setOnClickListener {
             val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
                 type = "*/*"
@@ -196,6 +208,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvDifficulty.text = "题目难度：${diffNames[Prefs.getDifficulty(this) - 1]}"
         val mode = Prefs.getPopupMode(this)
         binding.tvPopupMode.text = if (mode == 0) "弹出模式：打开就弹" else "弹出模式：每${Prefs.getPopupIntervalMin(this)}分钟弹一次"
+        binding.tvCooldown.text = "冷却时间：${Prefs.getCooldownMin(this)}分钟"
     }
 
     private fun refreshQCount() {

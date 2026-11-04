@@ -202,6 +202,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="设置弹出模式"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvCooldown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="冷却时间：30分钟"
+                android:textSize="14sp"
+                android:paddingBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnSetCooldown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置冷却时间"
                 android:textSize="13sp"/>
         </LinearLayout>
 

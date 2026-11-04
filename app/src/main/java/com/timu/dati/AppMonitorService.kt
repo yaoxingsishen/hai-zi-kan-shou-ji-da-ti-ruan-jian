@@ -102,6 +102,16 @@ class AppMonitorService : AccessibilityService() {
      * 触发答题遮罩
      */
     private fun triggerQuiz() {
+        // 检查冷却时间：答对题后N分钟内不再弹
+        val cooldownSec = Prefs.getCooldownMin(this) * 60L
+        val lastPass = Prefs.getLastPassTime(this)
+        val now = System.currentTimeMillis()
+        if (now - lastPass < cooldownSec * 1000) {
+            // 还在冷却期，不弹
+            locked = false
+            return
+        }
+
         locked = true
         val overlay = QuizOverlayController.get(this)
         if (overlay.isShowing) {
@@ -109,7 +119,9 @@ class AppMonitorService : AccessibilityService() {
         }
         overlay.onComplete = {
             locked = false
-            currentPkg = null  // 重置，退出再打开还能再弹
+            currentPkg = null
+            // 记录放行时间，开始冷却
+            Prefs.setLastPassTime(this, System.currentTimeMillis())
         }
         overlay.onCancel = {
             locked = false

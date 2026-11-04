@@ -36,6 +36,14 @@ object Prefs {
     fun getPopupIntervalMin(ctx: Context): Int = sp(ctx).getInt("popup_interval_min", 10)
     fun setPopupIntervalMin(ctx: Context, n: Int) = sp(ctx).edit().putInt("popup_interval_min", n).apply()
 
+    // 答对题后的冷却时间（分钟），冷却期内不再弹
+    fun getCooldownMin(ctx: Context): Int = sp(ctx).getInt("cooldown_min", 30)
+    fun setCooldownMin(ctx: Context, n: Int) = sp(ctx).edit().putInt("cooldown_min", n).apply()
+
+    // 记录上次答对题放行的时间戳
+    fun getLastPassTime(ctx: Context): Long = sp(ctx).getLong("last_pass_time", 0L)
+    fun setLastPassTime(ctx: Context, t: Long) = sp(ctx).edit().putLong("last_pass_time", t).apply()
+
     // ===== 管控APP列表 =====
     fun getMonitoredApps(ctx: Context): MutableSet<String> =
         sp(ctx).getStringSet("monitored", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
