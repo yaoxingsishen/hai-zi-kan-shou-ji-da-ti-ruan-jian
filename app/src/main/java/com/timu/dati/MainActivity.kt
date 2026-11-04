@@ -279,59 +279,30 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == FILE_REQ && resultCode == RESULT_OK) {
             data?.data?.let { uri ->
                 try {
+                    val input = contentResolver.openInputStream(uri)
+                    val text = input?.bufferedReader().use { it?.readText() } ?: ""
                     val list = mutableListOf<JSONObject>()
-                    // 判断文件类型
-                    val mimeType = contentResolver.getType(uri) ?: ""
-                    val fileName = uri.lastPathSegment ?: ""
-                    if (mimeType.contains("sheet") || fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
-                        // xlsx格式：用POI解析
-                        val input = contentResolver.openInputStream(uri)
-                        val wb = org.apache.poi.ss.usermodel.WorkbookFactory.create(input)
-                        val sheet = wb.getSheetAt(0)
-                        for (row in sheet) {
-                            if (row.rowNum == 0) continue // 跳过表头
-                            val type = row.getCell(0)?.toString()?.trim() ?: continue
-                            if (type.isBlank()) continue
-                            val qText = row.getCell(1)?.toString()?.trim() ?: continue
-                            val q = JSONObject()
-                            q.put("type", type)
-                            q.put("question", qText)
-                            val opts = JSONArray()
-                            for (i in 2..5) {
-                                val c = row.getCell(i)
-                                if (c != null && c.toString().isNotBlank()) opts.put(c.toString().trim())
-                            }
-                            q.put("options", opts)
-                            val ansCell = row.getCell(6)
-                            q.put("answer", ansCell?.numericCellValue?.toInt() ?: 0)
-                            val exCell = row.getCell(7)
-                            if (exCell != null) q.put("explain", exCell.toString().trim())
-                            list.add(q)
-                        }
-                        wb.close()
+                    if (text.trimStart().startsWith("{")) {
+                        // JSON格式
+                        val json = JSONObject(text)
+                        val arr = json.getJSONArray("questions")
+                        for (i in 0 until arr.length()) list.add(arr.getJSONObject(i))
                     } else {
-                        // JSON或CSV格式
-                        val input = contentResolver.openInputStream(uri)
-                        val text = input?.bufferedReader().use { it?.readText() } ?: ""
-                        if (text.trimStart().startsWith("{")) {
-                            val json = JSONObject(text)
-                            val arr = json.getJSONArray("questions")
-                            for (i in 0 until arr.length()) list.add(arr.getJSONObject(i))
-                        } else {
-                            text.lines().forEach { line ->
-                                if (line.isBlank() || line.startsWith("#")) return@forEach
-                                val parts = line.split(",")
-                                if (parts.size < 5) return@forEach
-                                val q = JSONObject()
-                                q.put("type", parts[0].trim())
-                                q.put("question", parts[1].trim())
-                                val opts = JSONArray()
-                                for (i in 2..5) if (parts.size > i && parts[i].isNotBlank()) opts.put(parts[i].trim())
-                                q.put("options", opts)
-                                q.put("answer", parts[6].trim().toIntOrNull() ?: 0)
-                                if (parts.size > 7) q.put("explain", parts[7].trim())
-                                list.add(q)
-                            }
+                        // CSV格式：题型,题目,选项1,选项2,选项3,选项4,答案序号,解析
+                        // Excel编辑后另存为CSV即可导入
+                        text.lines().forEach { line ->
+                            if (line.isBlank() || line.startsWith("#")) return@forEach
+                            val parts = line.split(",")
+                            if (parts.size < 5) return@forEach
+                            val q = JSONObject()
+                            q.put("type", parts[0].trim())
+                            q.put("question", parts[1].trim())
+                            val opts = JSONArray()
+                            for (i in 2..5) if (parts.size > i && parts[i].isNotBlank()) opts.put(parts[i].trim())
+                            q.put("options", opts)
+                            q.put("answer", parts[6].trim().toIntOrNull() ?: 0)
+                            if (parts.size > 7) q.put("explain", parts[7].trim())
+                            list.add(q)
                         }
                     }
                     Prefs.addUserQuestions(this, list)
