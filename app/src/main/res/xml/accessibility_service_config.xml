@@ -3,6 +3,5 @@
     android:accessibilityEventTypes="typeAllMask"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canRetrieveWindowContent="true"
-    android:canTouchExplorationGranularity="true"
     android:notificationTimeout="100"
     android:description="@string/a11y_service_label"/>
