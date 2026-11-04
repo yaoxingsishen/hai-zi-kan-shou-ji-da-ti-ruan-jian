@@ -22,14 +22,12 @@ class MainActivity : AppCompatActivity() {
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private val debugRunnable = object : Runnable {
         override fun run() {
-            val fg = AppMonitorService.getCurrentForeground()
-            val lastEvent = AppMonitorService.instance?.lastEventPkg ?: "无"
-            // 直接用UsageStatsManager检测一次，不依赖service
+            // 直接用UsageStatsManager检测，不依赖服务
             var usageFg = "检测失败"
             try {
                 val usm = getSystemService("usagestats") as android.app.usage.UsageStatsManager
                 val end = System.currentTimeMillis()
-                val start = end - 1000 * 10
+                val start = end - 1000 * 5
                 val stats = usm.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_BEST, start, end)
                 if (!stats.isNullOrEmpty()) {
                     var best: android.app.usage.UsageStats? = null
@@ -43,9 +41,10 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 usageFg = "异常: ${e.message}"
             }
-            binding.tvDebugFg.text = "前台:${fg ?: "无"} | 事件:$lastEvent | UsageStats:$usageFg"
+            val serviceRunning = if (ForegroundMonitorService.instance != null) "服务运行中" else "服务未运行"
+            binding.tvDebugFg.text = "前台:$usageFg | $serviceRunning"
             // 显示内部状态
-            val service = AppMonitorService.instance
+            val service = ForegroundMonitorService.instance
             val locked = service?.locked ?: false
             val cooldownMin = Prefs.getCooldownMin(this@MainActivity)
             val lastPass = Prefs.getLastPassTime(this@MainActivity)
@@ -62,6 +61,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         showPasswordGate()
+        // 启动前台监测服务，用UsageStatsManager检测前台APP
+        startForegroundService(android.content.Intent(this, ForegroundMonitorService::class.java))
     }
 
     override fun onResume() {
