@@ -133,27 +133,21 @@ class AppMonitorService : AccessibilityService() {
     /**
      * 第三重兜底：用UsageStatsManager获取前台APP
      */
+    @Suppress("DEPRECATION")
     private fun getForegroundByUsageStats(): String? {
         return try {
-            val cls = Class.forName("android.app.UsageStatsManager")
-            val usm = getSystemService("usagestats")
-            val method = cls.getMethod("queryUsageStats", Int::class.java, Long::class.java, Long::class.java)
+            val usm = getSystemService("usagestats") as android.app.usage.UsageStatsManager
             val end = System.currentTimeMillis()
-            val start = end - 1000 * 5
-            val result = method.invoke(usm, 4, start, end) as List<*>?
-            if (result.isNullOrEmpty()) return null
-            // 找最近使用的
-            var best: Any? = null
-            for (s in result) {
-                if (best == null) {
+            val start = end - 1000 * 10
+            val stats = usm.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_BEST, start, end)
+            if (stats.isNullOrEmpty()) return null
+            var best: android.app.usage.UsageStats? = null
+            for (s in stats) {
+                if (best == null || s.lastTimeUsed > best.lastTimeUsed) {
                     best = s
-                } else {
-                    val lastTime1 = s?.javaClass?.getMethod("getLastTimeUsed")?.invoke(s) as Long
-                    val lastTime2 = best?.javaClass?.getMethod("getLastTimeUsed")?.invoke(best) as Long
-                    if (lastTime1 > lastTime2) best = s
                 }
             }
-            best?.javaClass?.getMethod("getPackageName")?.invoke(best) as? String
+            best?.packageName
         } catch (_: Exception) {
             null
         }
@@ -234,8 +228,15 @@ class AppMonitorService : AccessibilityService() {
         var instance: AppMonitorService? = null
             private set
 
-        // 调试用：暴露当前检测到的前台包名
-        fun getCurrentForeground(): String? = instance?.currentPkg
+        // 调试用：暴露当前检测到的前台包名（三重检测）
+        fun getCurrentForeground(): String? {
+            val inst = instance ?: return null
+            // 三重检测
+            var fg = inst.currentPkg
+            if (fg == null) fg = inst.getForegroundByWindows()
+            if (fg == null) fg = inst.getForegroundByUsageStats()
+            return fg
+        }
     }
 
     override fun onCreate() {
