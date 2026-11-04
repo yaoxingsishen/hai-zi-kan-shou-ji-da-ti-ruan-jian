@@ -149,7 +149,7 @@ class AppMonitorService : AccessibilityService() {
                     best = s
                 } else {
                     val lastTime1 = s.javaClass.getMethod("getLastTimeUsed").invoke(s) as Long
-                    val lastTime2 = best.javaClass.getMethod("getLastTimeUsed").invoke(best) as Long
+                    val lastTime2 = best?.javaClass?.getMethod("getLastTimeUsed")?.invoke(best) as Long
                     if (lastTime1 > lastTime2) best = s
                 }
             }
