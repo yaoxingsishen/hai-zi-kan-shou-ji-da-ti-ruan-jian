@@ -16,13 +16,23 @@ import android.view.accessibility.AccessibilityWindowInfo
 class AppMonitorService : AccessibilityService() {
 
     @Volatile
-    private var locked = false
-    private var currentPkg: String? = null
+    var locked = false
+        private set
+    var currentPkg: String? = null
+        private set
     private val handler = Handler(Looper.getMainLooper())
 
     // 使用时长计时（秒）
-    private var usageSeconds = 0L
+    var usageSeconds = 0L
+        private set
     private var lastTickTime = 0L
+
+    // 重置所有状态（调试用）
+    fun resetState() {
+        locked = false
+        currentPkg = null
+        usageSeconds = 0L
+    }
 
     private val tickRunnable = object : Runnable {
         override fun run() {
@@ -125,19 +135,25 @@ class AppMonitorService : AccessibilityService() {
      */
     private fun getForegroundByUsageStats(): String? {
         return try {
-            val usm = getSystemService(android.app.UsageStatsManager::class.java)
+            val cls = Class.forName("android.app.UsageStatsManager")
+            val usm = getSystemService("usagestats")
+            val method = cls.getMethod("queryUsageStats", Int::class.java, Long::class.java, Long::class.java)
             val end = System.currentTimeMillis()
-            val start = end - 1000 * 5  // 最近5秒
-            val stats = usm.queryUsageStats(android.app.UsageStatsManager.INTERVAL_BEST, start, end)
-            if (stats.isNullOrEmpty()) return null
+            val start = end - 1000 * 5
+            val result = method.invoke(usm, 4, start, end) as List<*>?
+            if (result.isNullOrEmpty()) return null
             // 找最近使用的
-            var best: android.app.usage.UsageStats? = null
-            for (s in stats) {
-                if (best == null || s.lastTimeUsed > best.lastTimeUsed) {
+            var best: Any? = null
+            for (s in result) {
+                if (best == null) {
                     best = s
+                } else {
+                    val lastTime1 = s.javaClass.getMethod("getLastTimeUsed").invoke(s) as Long
+                    val lastTime2 = best.javaClass.getMethod("getLastTimeUsed").invoke(best) as Long
+                    if (lastTime1 > lastTime2) best = s
                 }
             }
-            best?.packageName
+            best?.javaClass?.getMethod("getPackageName")?.invoke(best) as? String
         } catch (_: Exception) {
             null
         }

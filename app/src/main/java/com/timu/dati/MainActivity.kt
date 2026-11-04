@@ -46,6 +46,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        refreshPermissionStatus()
+        refreshSettings()
+        loadMonitoredApps()
+        refreshQCount()
         handler.post(debugRunnable)
     }
 
@@ -89,11 +93,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnDebugReset.setOnClickListener {
             // 重置所有状态
             Prefs.setLastPassTime(this, 0L)
-            AppMonitorService.instance?.let {
-                it.locked = false
-                it.currentPkg = null
-                it.usageSeconds = 0L
-            }
+            AppMonitorService.instance?.resetState()
             Toast.makeText(this, "已重置！现在打开抖音测试", Toast.LENGTH_LONG).show()
         }
         binding.btnSetPin.setOnClickListener { showPinDialog() }
@@ -224,14 +224,6 @@ class MainActivity : AppCompatActivity() {
             overlay.show("com.test.pkg")
         }
         binding.recyclerApps.layoutManager = LinearLayoutManager(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        refreshPermissionStatus()
-        refreshSettings()
-        loadMonitoredApps()
-        refreshQCount()
     }
 
     private fun refreshPermissionStatus() {
