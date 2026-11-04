@@ -96,14 +96,14 @@ class ForegroundMonitorService : Service() {
             val mode = Prefs.getPopupMode(this)
             if (mode == 0) {
                 // 打开就弹模式：检测到刚打开就弹
-                QuizOverlayController.get(this).show()
+                QuizOverlayController.get(this).show(fg)
                 locked = true
                 usageSeconds = 0L
             } else {
                 // 定时弹模式：用了N分钟后弹
                 val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
                 if (usageSeconds >= intervalSec) {
-                    QuizOverlayController.get(this).show()
+                    QuizOverlayController.get(this).show(fg)
                     locked = true
                     usageSeconds = 0L
                 }
