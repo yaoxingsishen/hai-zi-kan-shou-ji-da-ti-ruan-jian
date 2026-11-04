@@ -24,8 +24,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupUI()
-        refreshPermissionStatus()
+        showPasswordGate()
+    }
+
+    private fun showPasswordGate() {
+        val et = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            hint = "输入密码进入"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("🔒 定时答题锁")
+            .setView(et)
+            .setCancelable(false)
+            .setPositiveButton("进入") { _, _ ->
+                if (et.text.toString() == Prefs.getPin(this)) {
+                    setupUI()
+                    refreshPermissionStatus()
+                } else {
+                    Toast.makeText(this, "密码错误", Toast.LENGTH_SHORT).show()
+                    showPasswordGate()
+                }
+            }
+            .setNegativeButton("退出") { _, _ -> finish() }
+            .show()
     }
 
     private fun setupUI() {

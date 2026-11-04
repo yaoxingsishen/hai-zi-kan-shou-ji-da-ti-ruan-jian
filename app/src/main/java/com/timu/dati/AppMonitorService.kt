@@ -36,7 +36,16 @@ class AppMonitorService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // 事件不做关键判断，全部交给tick统一处理
+        event ?: return
+        if (locked) return
+        // 从事件里直接取包名，比getWindows()更可靠
+        val pkg = event.packageName?.toString() ?: return
+        if (pkg == packageName || ignorePkgs.contains(pkg)) return
+        val monitored = Prefs.getMonitoredApps(this)
+        if (monitored.contains(pkg) && pkg != currentPkg) {
+            currentPkg = pkg
+            handler.post { triggerQuiz() }
+        }
     }
 
     override fun onInterrupt() {}
@@ -74,10 +83,11 @@ class AppMonitorService : AccessibilityService() {
         }
         overlay.onComplete = {
             locked = false
-            // 答完题后不主动goHome，让用户继续用刚打开的APP
+            currentPkg = null  // 重置，退出再打开还能再弹
         }
         overlay.onCancel = {
             locked = false
+            currentPkg = null
             goHome()
         }
         overlay.show(currentPkg ?: "")
