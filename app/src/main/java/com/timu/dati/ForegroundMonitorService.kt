@@ -84,31 +84,42 @@ class ForegroundMonitorService : Service() {
         if (monitored.isEmpty()) return
 
         val mode = Prefs.getPopupMode(this)
+        val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
 
         // 用UsageStatsManager检测前台APP
         val fg = getForegroundByUsageStats()
+        var inMonitoredApp = false
         if (fg != null) {
             currentPkg = fg
             // 忽略系统包
             if (!fg.startsWith("com.android.") && fg != "com.miui.home") {
-                if (mode == 0 && monitored.contains(fg)) {
-                    // 打开就弹模式：检测到刚打开管控APP就弹
-                    QuizOverlayController.get(this).show(fg)
-                    locked = true
-                    usageSeconds = 0L
-                    return
-                }
+                inMonitoredApp = monitored.contains(fg)
             }
         }
 
-        // 定时弹模式：用了N分钟后弹（不管前台是什么APP）
-        if (mode == 1) {
-            usageSeconds += elapsed
-            val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
-            if (usageSeconds >= intervalSec) {
-                QuizOverlayController.get(this).show("timer")
-                locked = true
-                usageSeconds = 0L
+        when (mode) {
+            0 -> {
+                // 打开就弹模式：只在管控APP里才计时，每隔N分钟弹一次
+                if (inMonitoredApp) {
+                    usageSeconds += elapsed
+                    if (usageSeconds >= intervalSec) {
+                        QuizOverlayController.get(this).show(fg ?: "unknown")
+                        locked = true
+                        usageSeconds = 0L
+                    }
+                } else {
+                    // 不在管控APP里，重置计时
+                    usageSeconds = 0L
+                }
+            }
+            1 -> {
+                // 定时弹模式：不管前台是什么APP，每隔N分钟弹一次
+                usageSeconds += elapsed
+                if (usageSeconds >= intervalSec) {
+                    QuizOverlayController.get(this).show("timer")
+                    locked = true
+                    usageSeconds = 0L
+                }
             }
         }
     }
