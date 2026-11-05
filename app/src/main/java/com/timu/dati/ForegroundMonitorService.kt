@@ -39,6 +39,19 @@ class ForegroundMonitorService : Service() {
         }
     }
 
+    // 守护线程：答题界面显示期间，每500毫秒检查一次，如果被关掉就重新显示
+    private val watchdogRunnable = object : Runnable {
+        override fun run() {
+            if (!locked) return
+            val overlay = QuizOverlayController.get(this@ForegroundMonitorService)
+            if (!overlay.isShowing) {
+                // 答题界面被关掉了，重新显示
+                overlay.show(currentPkg ?: "unknown")
+            }
+            handler.postDelayed(this, 500L)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -88,9 +101,13 @@ class ForegroundMonitorService : Service() {
         if (mode == 1) {
             usageSeconds += elapsed
             if (usageSeconds >= intervalSec) {
-                QuizOverlayController.get(this).show("timer")
+                val overlay = QuizOverlayController.get(this)
+                overlay.onComplete = { unlock() }
+                overlay.onCancel = { unlock() }
+                overlay.show("timer")
                 locked = true
                 usageSeconds = 0L
+                handler.post(watchdogRunnable)  // 启动守护
             }
             return
         }
@@ -115,17 +132,25 @@ class ForegroundMonitorService : Service() {
             if (inMonitoredApp) {
                 // 刚从非管控APP切换到管控APP，立即弹一次
                 if (lastPkg != fg) {
-                    QuizOverlayController.get(this).show(fg ?: "unknown")
+                    val overlay = QuizOverlayController.get(this)
+                    overlay.onComplete = { unlock() }
+                    overlay.onCancel = { unlock() }
+                    overlay.show(fg ?: "unknown")
                     locked = true
                     usageSeconds = 0L
                     lastPkg = fg
+                    handler.post(watchdogRunnable)  // 启动守护
                     return
                 }
                 usageSeconds += elapsed
                 if (usageSeconds >= intervalSec) {
-                    QuizOverlayController.get(this).show(fg ?: "unknown")
+                    val overlay = QuizOverlayController.get(this)
+                    overlay.onComplete = { unlock() }
+                    overlay.onCancel = { unlock() }
+                    overlay.show(fg ?: "unknown")
                     locked = true
                     usageSeconds = 0L
+                    handler.post(watchdogRunnable)  // 启动守护
                 }
             } else {
                 // 不在管控APP里，重置计时
@@ -154,6 +179,7 @@ class ForegroundMonitorService : Service() {
 
     fun unlock() {
         locked = false
+        handler.removeCallbacks(watchdogRunnable)  // 停止守护
     }
 
     fun resetState() {
