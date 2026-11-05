@@ -27,6 +27,7 @@ class ForegroundMonitorService : Service() {
         private set
     @Volatile
     var currentPkg: String? = null
+    private var lastPkg: String? = null
     private var usageSeconds = 0L
     private var lastTickTime = 0L
     private val handler = Handler(Looper.getMainLooper())
@@ -80,11 +81,23 @@ class ForegroundMonitorService : Service() {
 
         if (locked) return
 
-        val monitored = Prefs.getMonitoredApps(this)
-        if (monitored.isEmpty()) return
-
         val mode = Prefs.getPopupMode(this)
         val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
+
+        // 定时弹模式：不管前台是什么APP，每隔N分钟弹一次
+        if (mode == 1) {
+            usageSeconds += elapsed
+            if (usageSeconds >= intervalSec) {
+                QuizOverlayController.get(this).show("timer")
+                locked = true
+                usageSeconds = 0L
+            }
+            return
+        }
+
+        // 打开就弹模式：只在管控APP里才计时
+        val monitored = Prefs.getMonitoredApps(this)
+        if (monitored.isEmpty()) return
 
         // 用UsageStatsManager检测前台APP
         val fg = getForegroundByUsageStats()
@@ -97,29 +110,27 @@ class ForegroundMonitorService : Service() {
             }
         }
 
-        when (mode) {
-            0 -> {
-                // 打开就弹模式：只在管控APP里才计时，每隔N分钟弹一次
-                if (inMonitoredApp) {
-                    usageSeconds += elapsed
-                    if (usageSeconds >= intervalSec) {
-                        QuizOverlayController.get(this).show(fg ?: "unknown")
-                        locked = true
-                        usageSeconds = 0L
-                    }
-                } else {
-                    // 不在管控APP里，重置计时
+        if (mode == 0) {
+            // 打开就弹模式：刚进入管控APP就立即弹一次，然后每隔N分钟弹一次
+            if (inMonitoredApp) {
+                // 刚从非管控APP切换到管控APP，立即弹一次
+                if (lastPkg != fg) {
+                    QuizOverlayController.get(this).show(fg ?: "unknown")
+                    locked = true
                     usageSeconds = 0L
+                    lastPkg = fg
+                    return
                 }
-            }
-            1 -> {
-                // 定时弹模式：不管前台是什么APP，每隔N分钟弹一次
                 usageSeconds += elapsed
                 if (usageSeconds >= intervalSec) {
-                    QuizOverlayController.get(this).show("timer")
+                    QuizOverlayController.get(this).show(fg ?: "unknown")
                     locked = true
                     usageSeconds = 0L
                 }
+            } else {
+                // 不在管控APP里，重置计时
+                usageSeconds = 0L
+                lastPkg = fg
             }
         }
     }
