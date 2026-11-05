@@ -83,34 +83,33 @@ class ForegroundMonitorService : Service() {
         val monitored = Prefs.getMonitoredApps(this)
         if (monitored.isEmpty()) return
 
+        val mode = Prefs.getPopupMode(this)
+
         // 用UsageStatsManager检测前台APP
-        val fg = getForegroundByUsageStats() ?: return
-        currentPkg = fg
-
-        // 忽略系统包，但不忽略自己（方便调试）
-        if (fg.startsWith("com.android.") || fg == "com.miui.home") return
-
-        if (monitored.contains(fg)) {
-            // 是管控APP
-            usageSeconds += elapsed
-            val mode = Prefs.getPopupMode(this)
-            if (mode == 0) {
-                // 打开就弹模式：检测到刚打开就弹
-                QuizOverlayController.get(this).show(fg)
-                locked = true
-                usageSeconds = 0L
-            } else {
-                // 定时弹模式：用了N分钟后弹
-                val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
-                if (usageSeconds >= intervalSec) {
+        val fg = getForegroundByUsageStats()
+        if (fg != null) {
+            currentPkg = fg
+            // 忽略系统包
+            if (!fg.startsWith("com.android.") && fg != "com.miui.home") {
+                if (mode == 0 && monitored.contains(fg)) {
+                    // 打开就弹模式：检测到刚打开管控APP就弹
                     QuizOverlayController.get(this).show(fg)
                     locked = true
                     usageSeconds = 0L
+                    return
                 }
             }
-        } else {
-            // 不在管控APP里，重置计时
-            usageSeconds = 0L
+        }
+
+        // 定时弹模式：用了N分钟后弹（不管前台是什么APP）
+        if (mode == 1) {
+            usageSeconds += elapsed
+            val intervalSec = Prefs.getPopupIntervalMin(this) * 60L
+            if (usageSeconds >= intervalSec) {
+                QuizOverlayController.get(this).show("timer")
+                locked = true
+                usageSeconds = 0L
+            }
         }
     }
 
