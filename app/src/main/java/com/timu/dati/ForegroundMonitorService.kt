@@ -87,8 +87,8 @@ class ForegroundMonitorService : Service() {
         val fg = getForegroundByUsageStats() ?: return
         currentPkg = fg
 
-        // 忽略自己和系统包
-        if (fg == packageName || fg.startsWith("com.android.") || fg == "com.miui.home") return
+        // 忽略系统包，但不忽略自己（方便调试）
+        if (fg.startsWith("com.android.") || fg == "com.miui.home") return
 
         if (monitored.contains(fg)) {
             // 是管控APP
